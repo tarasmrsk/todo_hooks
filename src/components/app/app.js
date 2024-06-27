@@ -1,4 +1,4 @@
-import { Component } from 'react'
+import React, { useState } from 'react'
 
 import AppHeader from '../app-header'
 import AddForm from '../add-form'
@@ -6,128 +6,92 @@ import TodoList from '../todo-list'
 import Footer from '../footer'
 import './app.css'
 
-export default class App extends Component {
-  
-  maxId = 100
+function App() {
+  const [maxId, setMaxId] = useState(100)
+  const [filter, setFilter] = useState('all')
+  const [todoData, setTodoData] = useState([])
 
-  state = {
-    filter: 'all',
-    todoData: []
+  const createItem = (label, minutes, seconds) => ({
+    id: maxId + 1,
+    label,
+    done: false,
+    dateCreated: new Date(),
+    minutes,
+    seconds,
+  })
+
+  const addItem = (task, minutes, seconds) => {
+    const newItem = createItem(task, minutes, seconds)
+    setTodoData([newItem, ...todoData])
+    setMaxId(prevMaxId => prevMaxId + 1)
   }
 
-  addItem = (task, minutes, seconds) => {
-    const newItem = this.createItem(task, minutes, seconds)
-    this.setState(({ todoData }) => {
-      const newArray = [newItem, ...todoData]
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  toggleEditMode = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-      const oldItem = todoData[idx]
-      const updatedItem = { ...oldItem, editMode: !oldItem.editMode }
-      const newArray = [...todoData.slice(0, idx), updatedItem, ...todoData.slice(idx + 1)]
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  editItem = (id, newText) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-      const oldItem = todoData[idx]
-      const updatedItem = { ...oldItem, label: newText, editMode: false }
-      const newArray = [...todoData.slice(0, idx), updatedItem, ...todoData.slice(idx + 1)]
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  deleteItem = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-      const newArray = [...todoData.slice(0, idx), ...todoData.slice(idx + 1)]
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  setFilter = (filter) => {
-    this.setState({ filter })
-  }
-
-  deleteCompletedItem = () => {
-    this.setState(({ todoData }) => {
-      const newArray = todoData.filter((el) => el.done === false)
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  onToggleDone = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-      const oldItem = todoData[idx]
-      const newItem = { ...oldItem, done: !oldItem.done }
-      const newArray = [...todoData.slice(0, idx), newItem, ...todoData.slice(idx + 1)]
-      return {
-        todoData: newArray,
-      }
-    })
-  }
-
-  createItem(label, minutes, seconds) {
-    return {
-      id: this.maxId++,
-      label,
-      done: false,
-      dateCreated: new Date(),
-      minutes,
-      seconds,
-    }
-  }
-
-
-  render() {
-    const { todoData, filter } = this.state
-    const doneCount = todoData.filter((el) => !el.done).length
-
-    let filteredTasks = todoData
-    if (filter === 'completed') {
-      filteredTasks = todoData.filter((task) => task.done === true)
-    }
-    if (filter === 'active') {
-      filteredTasks = todoData.filter((task) => task.done === false)
-    }
-
-    return (
-      <div className="todoapp">
-        <div className="main">
-          <AppHeader />
-          <AddForm addItem={this.addItem} />
-          <TodoList
-            todos={filteredTasks}
-            onToggleDone={this.onToggleDone}
-            toggleEditMode={this.toggleEditMode}
-            editItem={this.editItem}
-            deleteItem={this.deleteItem}
-          />
-          <Footer
-            doneCount={doneCount}
-            setFilter={this.setFilter}
-            activeFilter={filter}
-            deleteCompletedItem={this.deleteCompletedItem}
-          />
-        </div>
-      </div>
+  const toggleEditMode = (id) => {
+    const updatedData = todoData.map((item) =>
+      item.id === id ? { ...item, editMode: !item.editMode } : item
     )
+    setTodoData(updatedData)
   }
+
+  const editItem = (id, newText) => {
+    const updatedData = todoData.map((item) =>
+      item.id === id ? { ...item, label: newText, editMode: false } : item
+    )
+    setTodoData(updatedData)
+  }
+
+  const deleteItem = (id) => {
+    const updatedData = todoData.filter((item) => item.id !== id)
+    setTodoData(updatedData)
+  }
+
+  const setFilterHandler = (newFilter) => {
+    setFilter(newFilter)
+  }
+
+  const deleteCompletedItem = () => {
+    const updatedData = todoData.filter((item) => !item.done)
+    setTodoData(updatedData)
+  }
+
+  const onToggleDone = (id) => {
+    const updatedData = todoData.map((item) =>
+      item.id === id ? { ...item, done: !item.done } : item
+    )
+    setTodoData(updatedData)
+  }
+
+  const doneCount = todoData.filter((item) => !item.done).length
+
+  let filteredTasks = todoData
+  if (filter === 'completed') {
+    filteredTasks = todoData.filter((task) => task.done === true)
+  }
+  if (filter === 'active') {
+    filteredTasks = todoData.filter((task) => task.done === false)
+  }
+
+  return (
+    <div className="todoapp">
+      <div className="main">
+        <AppHeader />
+        <AddForm addItem={addItem} />
+        <TodoList
+          todos={filteredTasks}
+          onToggleDone={onToggleDone}
+          toggleEditMode={toggleEditMode}
+          editItem={editItem}
+          deleteItem={deleteItem}
+        />
+        <Footer
+          doneCount={doneCount}
+          setFilter={setFilterHandler}
+          activeFilter={filter}
+          deleteCompletedItem={deleteCompletedItem}
+        />
+      </div>
+    </div>
+  )
 }
+
+export default App
